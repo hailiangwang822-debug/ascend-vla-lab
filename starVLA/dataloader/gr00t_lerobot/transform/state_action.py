@@ -18,7 +18,6 @@ import random
 from typing import Any, ClassVar
 
 import numpy as np
-import pytorch3d.transforms as pt
 import torch
 from pydantic import Field, PrivateAttr, field_validator, model_validator
 

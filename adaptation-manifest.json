@@ -1,0 +1,82 @@
+{
+  "upstream": "https://github.com/starVLA/starVLA",
+  "commit": "261ba5dd4313bbb910a9caeea07433c3d7b1aa34",
+  "upstream_zip_sha256": "f6e38637964f0c12c6d98f939569ed5c8738692c2d24e8f780aa78690edd9fda",
+  "files": [
+    {
+      "path": "cann83/assets-manifest.json",
+      "sha256": "a71fce88b709d22b613cef7b49664193646313a52d3dc3f7bd7b0a99f2189dd0"
+    },
+    {
+      "path": "cann83/bootstrap.py",
+      "sha256": "09b543c2e9a41f33959bc5ae1af8b32664795cc385aefb4524655b659ec0a9be"
+    },
+    {
+      "path": "cann83/bundle-manifest.json",
+      "sha256": "4637897077d2dc2d8d265f69820ec277e9090e755aaa83b5e34d0c928b74904b"
+    },
+    {
+      "path": "cann83/download_assets.py",
+      "sha256": "2638a6ea688cedeb97f67e7a038e1a8e09436c90ec8eabf89ee52fd2d1df3ffe"
+    },
+    {
+      "path": "cann83/launch.py",
+      "sha256": "4d93a22d353de484b5dba3f1425a221fcdb9a9d7a35c0e9feda92bb954ee19ed"
+    },
+    {
+      "path": "cann83/obs_state.py",
+      "sha256": "2eed59257a39e747c008b635c3a63eb3be2dea4b9aec2c98d94d49615bba5ea7"
+    },
+    {
+      "path": "cann83/preflight.py",
+      "sha256": "27ae4c2bb6561189d0fee85037831c735a8a3ccbf2273464b897eb9ee73c7b56"
+    },
+    {
+      "path": "cann83/requirements.lock",
+      "sha256": "93279e90c53b51a9a5323302d0832cfbf4f0acefe00cb9825dd49208059328bf"
+    },
+    {
+      "path": "cann83/train.yaml",
+      "sha256": "d3f034e9fed049206ab521930b8a313b2d9080901f0e5d4ea1fad8a1aea6afff"
+    },
+    {
+      "path": "cann83/training_checkpoint.py",
+      "sha256": "2567eee2410dbc4c714c5e1815860cf75fb50c226cd3c4ce9b6e4a4a20305bfe"
+    },
+    {
+      "path": "run_cloud.sh",
+      "sha256": "4f48a387d1669ed72b8b83697c2b9c8184182f845108d427c6e7521d20a33a00"
+    },
+    {
+      "path": "starVLA/dataloader/__init__.py",
+      "sha256": "cface14ce7a89577440a66c9f5767eb6567695ffb1f0725944178b91e66af45d"
+    },
+    {
+      "path": "starVLA/dataloader/gr00t_lerobot/mixtures.py",
+      "sha256": "54ceee537792c6fbb1b60ba37914be471ef86c55d56ee7006578bc71839d7d28"
+    },
+    {
+      "path": "starVLA/dataloader/gr00t_lerobot/transform/state_action.py",
+      "sha256": "2a8b81aca585bdef71fc42a8191ffe07ec0aeba6e82dcd40acb6299e1041e38e"
+    },
+    {
+      "path": "starVLA/model/framework/VLM4A/QwenOFT.py",
+      "sha256": "079bb8d60cb4061fca98cfb53be5c93e195202f872d9a7efe1753992cdbd06a7"
+    },
+    {
+      "path": "starVLA/model/framework/base_framework.py",
+      "sha256": "44dae69fd823a682a857c31d07b13a784d9aa9ab1b43d9a27c586ba85cacd3d2"
+    },
+    {
+      "path": "starVLA/training/train_starvla.py",
+      "sha256": "754ae388d721c571c68f50bbda5dfed4956736448dd98a36d75f19f657e22b06"
+    },
+    {
+      "path": "starVLA/training/trainer_utils/trainer_tools.py",
+      "sha256": "7dd24551cf2b49ed1073d6d58b22058373c215d568852f1b2032d4cf0dc15919"
+    }
+  ],
+  "validation": "CPU recovery tests passed; actual 64-card NPU/OBS validation pending",
+  "checkpoint_semantics": "full state + strict per-rank NPU/CPU RNG; 8-node OBS commit; NPU integration pending",
+  "release": "v0.1.0"
+}

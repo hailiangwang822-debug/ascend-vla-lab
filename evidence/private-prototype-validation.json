@@ -1,0 +1,64 @@
+{
+  "timestamp_utc": "2026-11-18T09:54:32.908674+00:00",
+  "host": "Windows-11-10.0.26300-SP0",
+  "python": "3.12.7 (tags/v3.12.7:0b05ead, Oct  1 2024, 03:06:41) [MSC v.1941 64 bit (AMD64)]",
+  "local_packages": {
+    "torch": "2.9.0+cpu",
+    "accelerate": "1.16.0",
+    "omegaconf": "2.3.1"
+  },
+  "cpu_tests": {
+    "cases": 7,
+    "passed": 7,
+    "versions_executed": [
+      "Accelerate1.16.0 installed",
+      "Accelerate1.11.0 official source tag"
+    ],
+    "checks": [
+      "64-card entry geometry",
+      "partial upload cannot advance LATEST",
+      "corruption rejected",
+      "nonzero node restores own eight optimizer shards and rank0 model",
+      "copy failure publishes no node marker",
+      "safe OBS prefix",
+      "7->20 fullstate recovery equals uninterrupted data, weights and LR"
+    ]
+  },
+  "reader": {
+    "kind": "real-data-cpu-reader",
+    "episodes": 432,
+    "steps": 52970,
+    "action_shape": [
+      8,
+      7
+    ],
+    "images": [
+      [
+        224,
+        224
+      ],
+      [
+        224,
+        224
+      ]
+    ],
+    "language": "pick up the black bowl next to the cookie box and place it on the plate",
+    "npu_training_tested": false
+  },
+  "npu_training_tested": false,
+  "real_obs_transfer_tested": false,
+  "hccl_tested": false,
+  "tokenizer_verified": {
+    "action_token_id": 146663,
+    "eight_repeats_yield_eight_identical_ids": true,
+    "hidden_size": 2048
+  },
+  "remote_environment": {
+    "python": "3.11.10",
+    "torch": "2.7.1",
+    "torch_npu": "2.7.1.post2",
+    "CANN": "8.3.RC1",
+    "accelerate": "1.11.0",
+    "deepspeed": "0.18.4"
+  }
+}

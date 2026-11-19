@@ -1,0 +1,14 @@
+{
+  "archives": [
+    {
+      "filename": "starvla-spatial.tar",
+      "bytes": 372377600,
+      "sha256": "e5382f592001887837000932684e0624073e5907e050a5a72d015a6e0a62265b"
+    },
+    {
+      "filename": "starvla-wheels.tar",
+      "bytes": 241448960,
+      "sha256": "d015ca4502512cbe64218c1c3f93ddf7f99f14f8839a9f89b74ba141b9d12098"
+    }
+  ]
+}

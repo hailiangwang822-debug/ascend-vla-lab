@@ -310,6 +310,11 @@ class TrainerUtils:
         if hasattr(dataloader, "sampler") and callable(getattr(dataloader.sampler, "set_epoch", None)):
             dataloader.sampler.set_epoch(epoch_counter)
 
+        if callable(getattr(dataloader, "set_epoch", None)):
+            dataloader.set_epoch(epoch_counter)
+        if callable(getattr(dataloader.dataset, "set_epoch", None)):
+            dataloader.dataset.set_epoch(epoch_counter)
+
         # 3. create new iterator
         return iter(dataloader), epoch_counter
 

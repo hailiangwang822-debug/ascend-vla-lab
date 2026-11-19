@@ -242,3 +242,15 @@ tmp
 logs/*
 **/.nf*
 code
+
+# Public adaptation source and documentation
+!docs/ascend/
+!docs/ascend/*.md
+!evidence/
+!evidence/*.md
+!THIRD_PARTY_NOTICES.md
+release/
+runtime/
+*.safetensors
+*.parts/
+*.download

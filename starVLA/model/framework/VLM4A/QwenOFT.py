@@ -181,7 +181,7 @@ class Qwenvl_OFT(baseframework):
             last_hidden = qwenvl_outputs.hidden_states[-1]  # [B, L, H]
 
         # Step 4: Action Expert Forward and Loss
-        with torch.autocast("cuda", dtype=torch.float32):
+        with torch.autocast("cuda", dtype=torch.bfloat16):
             # Extract action token embeddings as action prediction queries
             input_ids = qwen_inputs.get("input_ids", None)
             action_queries = self._gather_action_token_embeddings(
@@ -196,7 +196,7 @@ class Qwenvl_OFT(baseframework):
             actions_target = actions[:, -(self.future_action_window_size + 1) :, :]  # (B, chunk_len, action_dim)
 
             # Compute L1 loss
-            action_loss = self.l1_loss(pred_actions, actions_target)
+            action_loss = self.l1_loss(pred_actions.float(), actions_target.float())
 
         return {"action_loss": action_loss}
 
@@ -246,7 +246,7 @@ class Qwenvl_OFT(baseframework):
             last_hidden = qwenvl_outputs.hidden_states[-1]  # [B, L, H]
 
         # Step 4: Action Expert Forward and Loss
-        with torch.autocast("cuda", dtype=torch.float32):
+        with torch.autocast("cuda", dtype=torch.bfloat16):
             # Extract action token embeddings as action prediction queries
             input_ids = qwen_inputs.get("input_ids", None)
             action_queries = self._gather_action_token_embeddings(

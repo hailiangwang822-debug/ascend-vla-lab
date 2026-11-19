@@ -9,6 +9,7 @@ a float "sampling weight"
 ## {nakename: [(data_name, sampling_weight, robot_type)] }
 # Other mixtures are auto-discovered from examples/*/train_files/data_registry/
 DATASET_NAMED_MIXTURES = {
+    "libero_spatial": [("libero_spatial_no_noops_1.0.0_lerobot", 1.0, "libero_franka")],
     # --- LIBERO (kept as example) ---
     "libero_all": [
         ("libero_object_no_noops_1.0.0_lerobot", 1.0, "libero_franka"),

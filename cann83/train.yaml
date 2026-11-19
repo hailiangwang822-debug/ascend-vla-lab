@@ -1,0 +1,57 @@
+run_id: ${oc.env:RUN_NAME}
+run_root_dir: ${oc.env:OUTPUT_ROOT}
+seed: 42
+wandb_entity: null
+wandb_project: starvla-libero-910b
+is_debug: false
+framework:
+  name: QwenOFT
+  qwenvl:
+    base_vlm: ${oc.env:MODEL_DIR}
+    attn_implementation: sdpa
+  action_model:
+    action_model_type: MLP
+    action_dim: 7
+    state_dim: 7
+    future_action_window_size: 7
+    past_action_window_size: 0
+    action_horizon: 8
+  obs_image_size: [224, 224]
+datasets:
+  vla_data:
+    dataset_py: lerobot_datasets
+    data_root_dir: ${oc.env:DATA_ROOT}
+    data_mix: libero_spatial
+    action_type: delta_qpos
+    sequential_step_sampling: false
+    default_image_resolution: [3, 224, 224]
+    per_device_batch_size: ${oc.decode:${oc.env:MICRO_BATCH,1}}
+    num_workers: ${oc.decode:${oc.env:DATA_WORKERS,0}}
+    load_all_data_for_training: true
+    video_backend: pyav
+    include_state: false
+trainer:
+  max_train_steps: ${oc.decode:${oc.env:TRAIN_STEPS,1000}}
+  num_warmup_steps: ${oc.decode:${oc.env:WARMUP_STEPS,50}}
+  save_interval: ${oc.decode:${oc.env:SAVE_INTERVAL,100}}
+  eval_interval: 0
+  learning_rate:
+    base: 2.5e-5
+    qwen_vl_interface: 1.0e-5
+    action_model: 1.0e-4
+  lr_scheduler_type: cosine_with_min_lr
+  scheduler_specific_kwargs:
+    min_lr: 1.0e-6
+  freeze_modules: ''
+  gradient_accumulation_steps: ${oc.decode:${oc.env:STARVLA_GRAD_ACCUM,1}}
+  gradient_checkpointing: true
+  gradient_clipping: 1.0
+  logging_frequency: 1
+  save_format: pt
+  is_resume: false
+  pretrained_checkpoint: null
+  optimizer:
+    name: AdamW
+    betas: [0.9, 0.95]
+    eps: 1.0e-8
+    weight_decay: 1.0e-8

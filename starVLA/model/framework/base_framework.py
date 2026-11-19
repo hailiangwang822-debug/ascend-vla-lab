@@ -59,7 +59,10 @@ def build_framework(cfg): # The single entry point for building different model 
     if not hasattr(cfg, "framework") or not hasattr(cfg.framework, "name"):
         raise ValueError("Missing `cfg.framework.name`. The framework API now only accepts `framework.name`.")
 
-    _auto_import_framework_modules()
+    if cfg.framework.name == "QwenOFT":
+        importlib.import_module("starVLA.model.framework.VLM4A.QwenOFT")
+    else:
+        _auto_import_framework_modules()
 
     framework_id = cfg.framework.name
     if framework_id not in FRAMEWORK_REGISTRY._registry:

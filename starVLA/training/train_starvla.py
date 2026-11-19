@@ -22,11 +22,15 @@ from typing import Tuple
 # Third-Party Libraries
 import numpy as np
 import torch
+if os.environ.get("STARVLA_USE_NPU", "0") == "1":
+    import torch_npu
+    from torch_npu.contrib import transfer_to_npu  # noqa: F401
 import torch.distributed as dist
 import wandb
 from accelerate import Accelerator, DeepSpeedPlugin, InitProcessGroupKwargs
 from accelerate.logging import get_logger
-from accelerate.utils import set_seed
+from accelerate.utils import set_seed, ProjectConfiguration
+from cann83.training_checkpoint import DurableTrainerMixin
 from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -38,12 +42,15 @@ from starVLA.model.framework.base_framework import build_framework
 from starVLA.training.trainer_utils.config_tracker import AccessTrackedConfig, wrap_config
 from starVLA.training.trainer_utils.trainer_tools import TrainerUtils, build_param_lr_groups, normalize_dotlist_args
 
+gradient_accumulation_steps = int(os.environ.get("STARVLA_GRAD_ACCUM", "1"))
 deepspeed_plugin = DeepSpeedPlugin()
 # Avoid default c10d 30-minute timeout (1800000ms) on slow/imbalanced steps.
 # You can override via env: TORCH_DIST_TIMEOUT_MINUTES=1440
 dist_timeout_minutes = int(os.environ.get("TORCH_DIST_TIMEOUT_MINUTES", "1440"))
 process_group_kwargs = InitProcessGroupKwargs(timeout=timedelta(minutes=dist_timeout_minutes))
-accelerator = Accelerator(deepspeed_plugin=deepspeed_plugin, kwargs_handlers=[process_group_kwargs])
+accelerator = Accelerator(deepspeed_plugin=deepspeed_plugin,
+    gradient_accumulation_steps=gradient_accumulation_steps, kwargs_handlers=[process_group_kwargs],
+    project_config=ProjectConfiguration(save_on_each_node=True))
 accelerator.print(accelerator.state)
 
 # Sane Defaults
@@ -110,7 +117,7 @@ def setup_optimizer_and_scheduler(model, cfg) -> Tuple[torch.optim.Optimizer, to
     return optimizer, lr_scheduler
 
 
-class VLATrainer(TrainerUtils):
+class BaseVLATrainer(TrainerUtils):
     def __init__(self, cfg, model, vla_train_dataloader, optimizer, lr_scheduler, accelerator):
         self.config = cfg
         self.model = model
@@ -250,6 +257,8 @@ class VLATrainer(TrainerUtils):
         if self.completed_steps % self.config.trainer.logging_frequency == 0 and dist.get_rank() == 0:
             metrics["learning_rate"] = self.lr_scheduler.get_last_lr()[0]
             metrics["epoch"] = round(self.completed_steps / len(self.vla_train_dataloader), 2)
+            with open(Path(self.config.output_dir) / "metrics.jsonl", "a") as stream:
+                stream.write(json.dumps({"step": self.completed_steps, **metrics}) + "\n")
             wandb.log(metrics, step=self.completed_steps)
             logger.info(f"Step {self.completed_steps}, Loss: {metrics})")
 
@@ -308,14 +317,17 @@ class VLATrainer(TrainerUtils):
                     }
                 )
 
-            if self.completed_steps % self.config.trainer.eval_interval == 0:
+            if not self.accelerator.sync_gradients:
+                continue
+
+            if self.config.trainer.eval_interval > 0 and self.completed_steps % self.config.trainer.eval_interval == 0:
                 step_metrics = self.eval_action_model(step_metrics)
 
             step_metrics["data_time"] = t_end_data - t_start_data
             step_metrics["model_time"] = t_end_model - t_start_model
             self._log_metrics(step_metrics)
 
-            if self.completed_steps % self.config.trainer.save_interval == 0 and self.completed_steps > 0:
+            if self.completed_steps == 1 or self.completed_steps % self.config.trainer.save_interval == 0:
                 self._save_checkpoint()
 
             if self.completed_steps >= self.config.trainer.max_train_steps:
@@ -352,16 +364,16 @@ class VLATrainer(TrainerUtils):
     def _train_step(self, batch_vla, batch_vlm=None):
         """Execute single training step."""
         with self.accelerator.accumulate(self.model):
-            self.optimizer.zero_grad()
-
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 output_dict = self.model.forward(batch_vla)
                 action_loss = output_dict["action_loss"]
                 total_loss = action_loss
 
+            if not torch.isfinite(total_loss.detach()).all():
+                raise FloatingPointError("Non-finite VLA action loss")
             self.accelerator.backward(total_loss)
 
-            if self.config.trainer.gradient_clipping is not None:
+            if self.accelerator.sync_gradients and self.config.trainer.gradient_clipping is not None:
                 self.accelerator.clip_grad_norm_(self.model.parameters(), self.config.trainer.gradient_clipping)
 
             self.optimizer.step()
@@ -373,6 +385,7 @@ class VLATrainer(TrainerUtils):
             # to premature LR decay and incorrect LR on resume (#204).
             if self.accelerator.sync_gradients:
                 self.lr_scheduler.step()
+            self.optimizer.zero_grad()
 
         return {
             "action_dit_loss": action_loss.item(),
@@ -401,6 +414,10 @@ class VLATrainer(TrainerUtils):
         self.accelerator.wait_for_everyone()
 
 
+class VLATrainer(DurableTrainerMixin, BaseVLATrainer):
+    pass
+
+
 def main(cfg) -> None:
     logger.info("VLA Training :: Warming Up")
 
@@ -408,7 +425,14 @@ def main(cfg) -> None:
     logger.info("✅ Configuration wrapped for access tracking")
 
     output_dir = setup_directories(cfg=cfg)
+    if int(cfg.trainer.gradient_accumulation_steps) != accelerator.gradient_accumulation_steps:
+        raise ValueError("Config/Accelerate gradient accumulation mismatch")
+    set_seed(int(cfg.seed))  # identical initial action head on every rank
     vla = build_framework(cfg)
+    if cfg.trainer.gradient_checkpointing:
+        backbone = vla.qwen_vl_interface.model
+        backbone.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+        backbone.config.use_cache = False
     vla_train_dataloader = prepare_data(cfg=cfg, accelerator=accelerator, output_dir=output_dir)
     optimizer, lr_scheduler = setup_optimizer_and_scheduler(model=vla, cfg=cfg)
 

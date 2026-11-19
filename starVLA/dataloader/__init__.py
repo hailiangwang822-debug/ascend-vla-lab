@@ -3,12 +3,12 @@ import os
 from pathlib import Path
 
 import numpy as np
+import torch
 import torch.distributed as dist
 from accelerate.logging import get_logger
 from torch.utils.data import DataLoader
 
 from starVLA.dataloader.dataloader_manager import DataLoaderManager
-from starVLA.dataloader.vlm_datasets import make_vlm_dataloader
 
 logger = get_logger(__name__)
 
@@ -62,8 +62,9 @@ def build_dataloader(
             vla_dataset,
             batch_size=cfg.datasets.vla_data.per_device_batch_size,
             collate_fn=chosen_collate_fn,
-            num_workers=4,
-            # shuffle=True
+            num_workers=int(cfg.datasets.vla_data.get("num_workers", 0)),
+            generator=torch.Generator().manual_seed(int(cfg.seed)),
+            # Sampling is deterministic by (epoch, index, seed) in the native mixture.
         )
         if (dist.is_initialized() and dist.get_rank() == 0) or not dist.is_initialized():
 
@@ -71,6 +72,7 @@ def build_dataloader(
             vla_dataset.save_dataset_statistics(output_dir / "dataset_statistics.json")
         return vla_train_dataloader
     elif dataset_py == "vlm_datasets":
+        from starVLA.dataloader.vlm_datasets import make_vlm_dataloader
         vlm_data_module = make_vlm_dataloader(cfg)
         vlm_train_dataloader = vlm_data_module["train_dataloader"]
 

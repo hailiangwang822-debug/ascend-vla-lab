@@ -1,0 +1,24 @@
+{
+  "release": "v0.1.0",
+  "date": "2026-11-19",
+  "command": "python -m unittest discover -s cann83 -p test_durable_state.py -v",
+  "platform": "Windows, Python 3.12.7, CPU",
+  "torch": "2.9.0+cpu",
+  "accelerate": "1.16.0",
+  "tests_run": 8,
+  "tests_passed": 8,
+  "checks": [
+    "64-card launch configuration",
+    "configurable OBS root and rejection of invalid paths",
+    "damaged remote checkpoint rejected",
+    "CPU full state and data cursor restored from step 7 to step 20 match uninterrupted run",
+    "failed upload does not publish node completion marker",
+    "partial checkpoint cannot replace LATEST",
+    "remote path restricted to configured root",
+    "nonzero node restores its eight optimizer shards and rank-zero model"
+  ],
+  "real_obs_transfer_tested": false,
+  "hccl_tested": false,
+  "npu_training_tested": false,
+  "training_success_rate_measured": false
+}
