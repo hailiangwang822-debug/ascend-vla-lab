@@ -9,6 +9,17 @@ Original source archive SHA256: `f6e38637964f0c12c6d98f939569ed5c8738692c2d24e8f
 
 Copyright (c) StarVLA Team. The original LICENSE, CITATION.cff, README copy and Git ancestry are preserved. This repository adds Ascend/ModelArts integration; it does not claim authorship of the StarVLA framework or QwenOFT method. See `adaptation-manifest.json` and Git diff from the pinned commit for modifications.
 
+Before publication, credential strings found in older upstream commits were replaced with environment-variable placeholders. Commit authors, messages and topology are retained; rewriting historical blobs changes descendant commit IDs. No credential values are included in the release. The current training-source files are unchanged by this cleanup.
+
+Upstream-to-published commit mapping (the latest two upstream commits remain separate):
+
+| Original upstream | Sanitized published history |
+|---|---|
+| `261ba5dd4313bbb910a9caeea07433c3d7b1aa34` | `29025ccb8f45acd07e3859463d1c7ea6c6f5bbeb` |
+| `3796a96faf292cbe84fae68765ab84820836ff43` | `5ab791dd45fa50c2629c926636cedb0a0417e8a4` |
+
+Use `git diff 29025ccb8f45acd07e3859463d1c7ea6c6f5bbeb..main` to review the project changes in this repository. The manifest records the original upstream revision for provenance.
+
 ## Qwen2.5-VL-3B-Instruct
 
 Source: https://modelscope.cn/models/Qwen/Qwen2.5-VL-3B-Instruct
