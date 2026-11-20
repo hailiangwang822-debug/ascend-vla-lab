@@ -421,6 +421,20 @@ class VLATrainer(DurableTrainerMixin, BaseVLATrainer):
 def main(cfg) -> None:
     logger.info("VLA Training :: Warming Up")
 
+    if os.environ.get('STARVLA_USE_NPU') == '1':
+        # Verify the actual worker topology and HCCL before loading 64 models.
+        if accelerator.num_processes != 64 or accelerator.device.type != 'npu':
+            raise RuntimeError('This recipe requires 64 NPU workers; inspect node launch configuration')
+        rank_sum = torch.tensor([accelerator.process_index], device=accelerator.device, dtype=torch.int64)
+        dist.all_reduce(rank_sum)
+        if rank_sum.item() != sum(range(64)):
+            raise RuntimeError('HCCL rank collective returned the wrong result')
+        x = torch.ones((16, 16), device=accelerator.device, dtype=torch.bfloat16)
+        if not torch.equal((x @ x).float().cpu(), torch.full((16, 16), 16.0)):
+            raise RuntimeError('NPU BF16 matmul failed')
+        accelerator.wait_for_everyone()
+        accelerator.print('HCCL_64_RANKS_PASSED world_size=64 rank_sum=2016 BF16=passed')
+
     cfg = wrap_config(cfg)
     logger.info("✅ Configuration wrapped for access tracking")
 

@@ -16,7 +16,7 @@ import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = 'v0.1.0'
+VERSION = 'v0.1.1'
 NOTICE = ('Qwen is licensed under the Qwen RESEARCH LICENSE AGREEMENT, '
           'Copyright (c) Alibaba Cloud. All Rights Reserved.\n')
 ATTRIBUTION = '''LIBERO Spatial offline data archive
@@ -39,23 +39,27 @@ def info(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--assets-dir', type=Path, required=True)
+    parser.add_argument('--assets-dir', type=Path)
+    parser.add_argument('--code-only', action='store_true', help='Build the small source update; reuse v0.1.0 assets')
     parser.add_argument('--output', type=Path, default=ROOT / 'release')
     parser.add_argument('--git', default='git')
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    bundle = json.loads((ROOT / 'cann83/bundle-manifest.json').read_text())
-    for row in bundle['archives']:
-        path = args.assets_dir / row['filename']
-        if info(path) != row:
-            raise ValueError('Archive size/hash mismatch: ' + path.name)
-        shutil.copyfile(path, args.output / path.name)
+    if not args.code_only:
+        if args.assets_dir is None:
+            parser.error('--assets-dir is required unless --code-only is selected')
+        bundle = json.loads((ROOT / 'cann83/bundle-manifest.json').read_text())
+        for row in bundle['archives']:
+            path = args.assets_dir / row['filename']
+            if info(path) != row:
+                raise ValueError('Archive size/hash mismatch: ' + path.name)
+            shutil.copyfile(path, args.output / path.name)
 
     manifest_path = ROOT / 'adaptation-manifest.json'
     manifest = json.loads(manifest_path.read_text())
     paths = {r['path'] for r in manifest['files']} | {
         'run_cloud.sh', 'cann83/requirements.lock', 'cann83/bundle-manifest.json',
-        'cann83/assets-manifest.json'}
+        'cann83/assets-manifest.json', 'cann83/runtime_contract.py', 'cann83/obs_backend.py'}
     manifest['files'] = [{'path': p, 'sha256': info(ROOT / p)['sha256']} for p in sorted(paths)]
     manifest['release'] = VERSION
     manifest['validation'] = 'CPU recovery tests passed; actual 64-card NPU/OBS validation pending'
@@ -73,6 +77,16 @@ def main():
             if p.stat().st_size >= 100 * 1024**2:
                 raise ValueError('Large asset accidentally added to source: ' + relative)
             z.write(p, 'A/' + relative)
+
+    if args.code_only:
+        with zipfile.ZipFile(code) as z:
+            if z.testzip() is not None:
+                raise ValueError('Corrupt code ZIP')
+        report = {'version': VERSION, 'npu_training_tested': False,
+                  'reuse_assets_from': 'v0.1.0', 'files': [info(code)]}
+        (args.output / 'code-manifest.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+        print(json.dumps(report, indent=2))
+        return
 
     configs = args.output / 'qwen25-vl-3b-configs.zip'
     assets = json.loads((ROOT / 'cann83/assets-manifest.json').read_text())

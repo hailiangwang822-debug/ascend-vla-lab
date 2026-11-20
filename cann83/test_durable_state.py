@@ -107,7 +107,7 @@ class DurableStateTests(unittest.TestCase):
         self.assertFalse(self.store.exists(remote + '/node-000/_NODE_COMPLETE.json'))
 
     def test_64_card_entry(self):
-        env = dict(STARVLA_OBS_ROOT=REMOTE.rsplit('/runs/', 1)[0], MA_NUM_HOSTS='8', VC_TASK_INDEX='7', VC_WORKER_HOSTS='host0,host1',
+        env = dict(STARVLA_OBS_ROOT=REMOTE.rsplit('/runs/', 1)[0], MA_NUM_HOSTS='8', VC_TASK_INDEX='7', VC_WORKER_HOSTS=','.join(f'host{i}' for i in range(8)),
                    RUN_NAME='test64', MODEL_DIR='/cache/Qwen2.5-VL-3B-Instruct', DATA_ROOT='/cache/data',
                    OUTPUT_ROOT='/cache/out', STARVLA_RUNTIME='/cache/private/node7')
         self.assertEqual(specification(env)['world_size'], 64)
@@ -118,7 +118,7 @@ class DurableStateTests(unittest.TestCase):
                          Path('/cache/private/node7'))
         with self.assertRaises(ValueError):
             specification({**env, 'MA_NUM_HOSTS': '4'})
-        self.assertTrue(secondary_entry({'RANK_TABLE_FILE': '/x', 'ASCEND_DEVICE_ID': '1'}))
+        self.assertFalse(secondary_entry({'RANK_TABLE_FILE': '/x', 'ASCEND_DEVICE_ID': '1'}))
         with self.assertRaises(ValueError):
             secondary_entry({'MA_RUN_METHOD': 'torchrun'})
 

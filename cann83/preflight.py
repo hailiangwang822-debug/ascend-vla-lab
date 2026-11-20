@@ -23,10 +23,20 @@ def main():
     if platform.machine() != 'aarch64' or not torch.npu.is_available() or torch.npu.device_count() != 8:
         raise RuntimeError('Expected eight visible Ascend devices on each aarch64 training node')
     print('Node NPU count:', torch.npu.device_count(), flush=True)
+    print('VISIBLE_DEVICES', os.environ.get('ASCEND_RT_VISIBLE_DEVICES', '<all allocated>'), flush=True)
     for name in ['av', 'cv2', 'pyarrow', 'pandas', 'qwen_vl_utils',
                  'starVLA.dataloader.lerobot_datasets',
                  'starVLA.model.framework.VLM4A.QwenOFT']:
         importlib.import_module(name)
+    import transformers
+    import accelerate
+    import deepspeed
+    for name, module in [('torch', torch), ('torch-npu', torch_npu),
+                         ('transformers', transformers), ('accelerate', accelerate),
+                         ('deepspeed', deepspeed)]:
+        if module.__version__.split('+', 1)[0] != expected[name]:
+            raise RuntimeError(f'{name} import shadowed by PYTHONPATH/user site: {module.__file__}')
+        print('RUNTIME_MODULE', name, module.__version__, module.__file__, flush=True)
     model = Path(os.environ['MODEL_DIR'])
     index = json.loads((model / 'model.safetensors.index.json').read_text())
     for name in set(index['weight_map'].values()):
@@ -75,6 +85,23 @@ def main():
         assert sample['action'].shape == (8, 7)
         assert np.isfinite(sample['action']).all()
         assert len(sample['image']) == 2 and sample['lang']
+        # Exercise the real tokenizer/image processor offline, without loading
+        # the 3B weights or allocating an NPU context.
+        from transformers import AutoProcessor
+        from qwen_vl_utils import process_vision_info
+        processor = AutoProcessor.from_pretrained(str(model), local_files_only=True)
+        processor.tokenizer.padding_side = 'left'
+        token_ids = processor.tokenizer('🔍', add_special_tokens=False)['input_ids']
+        if len(token_ids) != 1:
+            raise ValueError('Action placeholder must tokenize to one ID')
+        prompt = sample['lang'] + ' Please predict the next 8 robot actions: <action>' + '🔍' * 8 + '<action>.'
+        messages = [{'role': 'user', 'content': [{'type': 'image', 'image': im} for im in sample['image']] + [{'type': 'text', 'text': prompt}]}]
+        text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        images, videos = process_vision_info(messages)
+        encoded = processor(text=[text], images=images, videos=videos, padding=True, return_tensors='pt')
+        if int((encoded['input_ids'] == token_ids[0]).sum()) != 8 or len(encoded['image_grid_thw']) != 2:
+            raise ValueError('Real two-camera/action-token processor contract failed')
+        print('PROCESSOR_PASSED two_cameras=2 action_tokens=8', flush=True)
         ds.save_dataset_statistics(Path(os.environ['OUTPUT_ROOT']) / os.environ['RUN_NAME'] / f'dataset-preflight-node-{os.environ.get("VC_TASK_INDEX", "0")}.json')
         print('Training reader passed:', len(ds), 'steps; first sample:', sample['lang'], flush=True)
     print('Preflight passed: full input checksums, imports, two cameras and normalized action sample', flush=True)

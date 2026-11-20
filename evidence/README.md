@@ -2,6 +2,8 @@
 
 ## StarVLA training integration
 
+The first user cloud attempt on v0.1.0 failed before model loading because the bootstrap incorrectly required ASCEND_DEVICE_ID when RANK_TABLE_FILE existed. v0.1.1 fixes node entry handling and preserves the pre-conda platform interpreter for OBS. See `startup-audit-v0.1.1.json`, `dependency-audit-v0.1.1.json` and `tiny-forward-audit-v0.1.1.json` for the new validation. Tiny random CPU model checks establish integration, not 3B/NPU training or policy accuracy.
+
 `private-prototype-validation.json` records local tests on the previous prototype, including the full Spatial CPU reader (432 episodes / 52,970 frames), tokenizer checks, and seven recovery tests under installed Accelerate 1.16.0 and target Accelerate 1.11.0 loaded from its official source tag. It does not record a real NPU training run.
 
 The public version changes OBS paths into a required `STARVLA_OBS_ROOT` setting and adds a root-validation test. See `public-validation.json` for its actual local execution result. The small CPU test compares uninterrupted training against save-at-7/resume-to-20 using dropout, Adam, a scheduler and data cursor. It is a mechanism test; it does not establish bitwise equivalence on distributed NPUs.

@@ -9,7 +9,7 @@
     },
     {
       "path": "cann83/bootstrap.py",
-      "sha256": "09b543c2e9a41f33959bc5ae1af8b32664795cc385aefb4524655b659ec0a9be"
+      "sha256": "da8a671184c1930e4395cc86b2866513ed788fe567faf4c54f55e563ceefe4fd"
     },
     {
       "path": "cann83/bundle-manifest.json",
@@ -21,19 +21,27 @@
     },
     {
       "path": "cann83/launch.py",
-      "sha256": "4d93a22d353de484b5dba3f1425a221fcdb9a9d7a35c0e9feda92bb954ee19ed"
+      "sha256": "a8ebf6ffd0036ea133ef80a39b2f33c5311feacebe152fa0771edd7dab0eb4d4"
+    },
+    {
+      "path": "cann83/obs_backend.py",
+      "sha256": "ebd2e1aaa2b113f598371ef44ce5850fbdadba4ae962120b721aaea896f191ea"
     },
     {
       "path": "cann83/obs_state.py",
-      "sha256": "2eed59257a39e747c008b635c3a63eb3be2dea4b9aec2c98d94d49615bba5ea7"
+      "sha256": "2808361a11766c60417917ec305156df7f096db2b13fe0dc704302e4644f2994"
     },
     {
       "path": "cann83/preflight.py",
-      "sha256": "27ae4c2bb6561189d0fee85037831c735a8a3ccbf2273464b897eb9ee73c7b56"
+      "sha256": "1beb4bd720da74dc87cc40189f1e0284393294806e452b297764685b7d65f448"
     },
     {
       "path": "cann83/requirements.lock",
       "sha256": "93279e90c53b51a9a5323302d0832cfbf4f0acefe00cb9825dd49208059328bf"
+    },
+    {
+      "path": "cann83/runtime_contract.py",
+      "sha256": "0f02e2e67cd73010664464027fcfd41d7f838cdc09e043f3d099cbdcb049d32a"
     },
     {
       "path": "cann83/train.yaml",
@@ -45,7 +53,7 @@
     },
     {
       "path": "run_cloud.sh",
-      "sha256": "4f48a387d1669ed72b8b83697c2b9c8184182f845108d427c6e7521d20a33a00"
+      "sha256": "fbc2ea38dcb572da1f909c661e0df97839ca21168e5148ff280909338030c0f7"
     },
     {
       "path": "starVLA/dataloader/__init__.py",
@@ -69,7 +77,7 @@
     },
     {
       "path": "starVLA/training/train_starvla.py",
-      "sha256": "754ae388d721c571c68f50bbda5dfed4956736448dd98a36d75f19f657e22b06"
+      "sha256": "6e6120fe58beb2f65c56cafc04c59d6b07cafbcce82ad23bbf1a5c90c1f1d235"
     },
     {
       "path": "starVLA/training/trainer_utils/trainer_tools.py",
@@ -78,5 +86,5 @@
   ],
   "validation": "CPU recovery tests passed; actual 64-card NPU/OBS validation pending",
   "checkpoint_semantics": "full state + strict per-rank NPU/CPU RNG; 8-node OBS commit; NPU integration pending",
-  "release": "v0.1.0"
+  "release": "v0.1.1"
 }

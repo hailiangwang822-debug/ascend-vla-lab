@@ -8,6 +8,7 @@
 
 ## 开始实践
 
+- **v0.1.0 首次云端启动发现节点入口错误，已有资产用户先更新 [v0.1.1 小代码包](docs/ascend/STARTUP_FIX_V011_CN.md)。模型与数据不用重传。**
 - [黄区 Windows → 贵阳 OBS → ModelArts 64 卡操作指南](docs/ascend/YELLOW_ZONE_RUNBOOK_CN.md)
 - [模型原理、训练基础和学习路线](docs/ascend/PROJECT_GUIDE_CN.md)
 - [下载离线交付包](https://github.com/hailiangwang822-debug/ascend-vla-lab/releases)

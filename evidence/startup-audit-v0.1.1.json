@@ -1,0 +1,37 @@
+{
+  "release": "v0.1.1",
+  "date": "2026-11-20",
+  "observed_failure": "v0.1.0 ModelArts node 0 and 5: RTF entry has no ASCEND_DEVICE_ID, before assets/model loading",
+  "root_cause": "Rank-table presence incorrectly treated as per-card invocation",
+  "known_good_comparison": "Previous successful VLM job: MA_NUM_HOSTS, VC_TASK_INDEX, first VC_WORKER_HOSTS address, one torchrun launcher per node; pre-conda platform Python for MoXing",
+  "local_platform": "Windows Python 3.12.7, CPU torch 2.9.0",
+  "target_accelerate_executed": "1.11.0 official source",
+  "test_command": "python -m unittest discover -s cann83 -p test_*.py -v",
+  "test_result": "25/25 passed under target Accelerate 1.11.0 source, local CPU torch 2.9.0",
+  "checks": [
+    "Reported node 0/5 RTF environment reaches execute through bootstrap CLI",
+    "No node silently skipped from inherited device metadata",
+    "Duplicate launcher and nested launcher rejected",
+    "Image version rejected before OBS and asset downloads",
+    "Actual Accelerate parser and standard launcher produce 8 workers per node and 64 total",
+    "CPU full-state restore at step 7 to 20 matches continuous run",
+    "Corrupt and incomplete checkpoints rejected without replacing LATEST",
+    "Real subprocess bridge with fake MoXing checks literal paths, noisy output and failures",
+    "55 offline wheel hashes and dependency metadata closure",
+    "1312 non-weight assets hashes and real Spatial sample with dual images and 8x7 actions",
+    "Target Transformers 4.57.1 processor with eight action tokens",
+    "Reduced random QwenOFT CPU forward/backward updates action, vision and language parameters"
+  ],
+  "deepspeed_0_18_4_source_review": "Checkpoint tag and filenames, rigid per-rank optimizer loading, fp32 master restore and node-local scheduler state reviewed",
+  "cloud_checks_added_not_yet_executed": [
+    "64-rank HCCL sum",
+    "BF16 matmul on each NPU",
+    "actual image and code integrity"
+  ],
+  "actual_3b_training_tested": false,
+  "npu_training_tested": false,
+  "real_obs_tested": false,
+  "hccl_tested": false,
+  "tests_run": 25,
+  "tests_passed": 25
+}

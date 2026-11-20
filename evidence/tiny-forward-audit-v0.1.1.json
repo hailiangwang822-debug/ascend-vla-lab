@@ -1,0 +1,30 @@
+{
+  "kind": "tiny_random_qwen_oft_cpu_forward_backward",
+  "transformers": "4.57.1",
+  "tokenizers": "0.22.1",
+  "torch": "2.9.0+cpu",
+  "attention": "sdpa",
+  "gradient_checkpointing": "nonreentrant",
+  "images": 2,
+  "action_shape": [
+    8,
+    7
+  ],
+  "finite_loss": 0.6392264366149902,
+  "nonzero_gradient_parameters": {
+    "action": 16,
+    "vision": 18,
+    "text": 26
+  },
+  "updated": {
+    "action": true,
+    "vision": true,
+    "text": true
+  },
+  "parameters": 9914375,
+  "original_3b_weights_loaded": false,
+  "npu_tested": false,
+  "limitations": "Random reduced 2-layer CPU backbone; validates integration only, not actual 3B accuracy, NPU kernels or distributed training.",
+  "compute_dtype": "float32 (CPU; CUDA autocast disabled)",
+  "input_kind": "two synthetic RGB images and synthetic finite action labels; real tokenizer and preprocessing"
+}

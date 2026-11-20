@@ -1,3 +1,11 @@
+# v0.1.1 — ModelArts node startup repair
+
+修复首个64卡作业中的 `RTF entry has no ASCEND_DEVICE_ID`：RTF 存在不再被当成逐卡启动；统一为旧成功作业的每节点一个 bash 入口。提前验证镜像和源码，补齐旧作业运行库路径，检查双图处理器，并在加载模型前检查64进程通信和BF16运算。
+
+下载 `ascend-vla-v0.1.1-code.zip`，上传完整 A 到新的代码目录；复用 v0.1.0 的模型、数据和离线依赖。详见 [修复操作指引](STARTUP_FIX_V011_CN.md)。真实 NPU/OBS 集成仍待云端验证。
+
+本地验证：目标 Accelerate 1.11.0 下 25/25 项测试通过；55 个离线 wheel 与 1312 个非权重资产校验通过；目标 Transformers 4.57.1 双图处理及缩小随机 QwenOFT CPU 前反向通过。另提供约55KB覆盖补丁，合并旧代码包后与新完整代码包逐文件相同。
+
 # v0.1.0 — Ascend / ModelArts training integration
 
 首个公开交付版本。基于固定 StarVLA 源码，提供 QwenOFT / LIBERO Spatial 的 8×8 昇腾训练配置、离线资产校验、OBS 完整状态持久化与同拓扑恢复。

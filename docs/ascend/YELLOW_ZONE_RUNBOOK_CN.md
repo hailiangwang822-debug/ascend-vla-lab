@@ -1,5 +1,7 @@
 # 黄区 Windows 电脑实践：下载 → 贵阳 OBS → 64 卡训练
 
+**更新：v0.1.0 代码的节点入口已在真实作业中发现错误。准备好本页资产后，请按 [v0.1.1 修复指引](STARTUP_FIX_V011_CN.md) 使用新版代码启动。资产与权重继续使用。**
+
 本指南对应公开版 **v0.1.0**。Windows 只准备文件和操作云平台；训练在贵阳 ModelArts 8节点×8张910B上执行，Windows不需要CUDA、CANN或训练环境。已有π0.5推理环境和本地MuJoCo可以继续用于原来的推理实验。
 
 从项目 [Releases](https://github.com/hailiangwang822-debug/ascend-vla-lab/releases) 下载 `ascend-vla-v0.1.0-transfer.zip`，不是GitHub自动生成的Source code.zip。总包包含代码、完整Spatial数据、离线依赖、配置和下载器；两片Qwen权重需按下文下载。若尚未出现Release，说明上传还未完成。

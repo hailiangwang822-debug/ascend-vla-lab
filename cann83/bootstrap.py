@@ -15,6 +15,7 @@ import traceback
 import uuid
 
 from obs_state import Store, atomic_json, digest, restore_node, safe_relative, validate_remote, configured_root
+from runtime_contract import check_base_runtime, validate_node_entry, clean_child_environment
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,14 +44,10 @@ def specification(env):
 
 
 def secondary_entry(env):
-    if env.get('MA_RUN_METHOD') in ('torchrun', 'msrun') or 'LOCAL_RANK' in env:
-        raise ValueError('Use the same custom bash launch mode as the old job; do not nest torchrun/msrun')
-    if 'RANK_TABLE_FILE' in env:
-        if 'ASCEND_DEVICE_ID' not in env:
-            raise ValueError('RTF entry has no ASCEND_DEVICE_ID')
-        return int(env['ASCEND_DEVICE_ID']) != 0
-    if 'ASCEND_DEVICE_ID' in env and int(env['ASCEND_DEVICE_ID']) != 0:
-        return True
+    # Compatibility name. The supported platform contract is ONE entry per
+    # node, just like the known-good VLM job. RTF/device metadata is not proof
+    # of a per-card entry and must never silently skip an entire worker node.
+    validate_node_entry(env)
     return False
 
 
@@ -118,6 +115,9 @@ def execute(spec):
     for name in ('MA_NUM_HOSTS', 'VC_TASK_INDEX', 'VC_WORKER_HOSTS'):
         if not os.environ.get(name):
             raise ValueError('Missing ModelArts environment variable: ' + name)
+    from launch import validate_topology
+    validate_topology(spec['nodes'], spec['node'], 8, os.environ)
+    check_base_runtime(ROOT)
     cache = Path(spec['cache'])
     cache.mkdir(parents=True, exist_ok=True)
     attempt = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ-') + uuid.uuid4().hex[:8]
@@ -154,20 +154,19 @@ def execute(spec):
             else:
                 store.write(marker, {**spec, 'attempt': attempt}, local / '_RUN.json')
         assets = prepare_assets(store, spec)
-        env = dict(os.environ)
-        for name in ('RANK_TABLE_FILE', 'RANK_ID', 'RANK_SIZE', 'DEVICE_ID', 'ASCEND_DEVICE_ID',
-                     'RANK', 'WORLD_SIZE', 'LOCAL_WORLD_SIZE'):
-            env.pop(name, None)
+        env = clean_child_environment(os.environ)
         env.update(STARVLA_OBS_ROOT=spec['obs_root'], MODEL_DIR=str(assets / 'models/Qwen2.5-VL-3B-Instruct'),
                    DATA_ROOT=str(assets / 'datasets'), OUTPUT_ROOT=str(output_root),
                    RUN_NAME=spec['run'], TRAIN_STEPS=str(spec['steps']), SAVE_INTERVAL=str(spec['save_interval']),
                    NNODES='8', NODE_RANK=str(spec['node']), NPROC_PER_NODE='8', GLOBAL_BATCH='64',
+                   MASTER_ADDR=os.environ['VC_WORKER_HOSTS'].split(',')[0].strip(),
                    MICRO_BATCH='1', DATA_WORKERS='0', WARMUP_STEPS=str(max(2, spec['steps'] // 20)),
                    STARVLA_BOOTSTRAP_PYTHON=sys.executable, STARVLA_OBS_RUN=spec['run_remote'],
                    STARVLA_RUNTIME=str(cache / 'runtime' / attempt),
                    HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', WANDB_MODE='disabled',
                    TOKENIZERS_PARALLELISM='false', NO_ALBUMENTATIONS_UPDATE='1',
                    ALBUMENTATIONS_OFFLINE='1', PYTHONUNBUFFERED='1',
+                   PYTHONNOUSERSITE='1',
                    HCCL_WHITELIST_DISABLE='1', HCCL_CONNECT_TIMEOUT='7200', HCCL_EXEC_TIMEOUT='14400',
                    HCCL_EVENT_TIMEOUT='14520', ACL_DEVICE_SYNC_TIMEOUT='14700',
                    ASCEND_SLOG_PRINT_TO_STDOUT='0', ASCEND_GLOBAL_LOG_LEVEL='3')
@@ -182,6 +181,7 @@ def execute(spec):
         subprocess.run([sys.executable, '-m', 'venv', '--system-site-packages', str(venv)], check=True)
         python = venv / 'bin/python'
         subprocess.run([str(python), '-m', 'pip', 'install', '--no-index', '--no-deps',
+                        '--disable-pip-version-check',
                         '--find-links', str(assets / 'wheelhouse'), '-r', str(ROOT / 'cann83/requirements.lock')],
                        env=env, check=True)
         with (local / 'console.log').open('w', buffering=1) as log:
@@ -205,9 +205,15 @@ def execute(spec):
         (local / 'error.txt').write_text(traceback.format_exc())
         raise
     finally:
+        active_error = sys.exc_info()[0] is not None
         stopped.set()
         monitor.join(timeout=15)
-        upload_logs(store, local, remote_logs)
+        try:
+            upload_logs(store, local, remote_logs)
+        except Exception:
+            if not active_error:
+                raise
+            print('FINAL_LOG_UPLOAD_FAILED (original error preserved)', traceback.format_exc(), flush=True)
 
 
 def main():
@@ -217,15 +223,21 @@ def main():
     args = p.parse_args()
     spec = specification(os.environ)
     print(json.dumps(spec, indent=2), flush=True)
+    names = ('MA_RUN_METHOD', 'MA_NUM_HOSTS', 'VC_TASK_INDEX', 'VC_WORKER_HOSTS',
+             'MA_LOCAL_TASK_INDEX', 'RANK_TABLE_FILE', 'ASCEND_DEVICE_ID',
+             'LOCAL_RANK', 'RANK', 'WORLD_SIZE', 'ASCEND_RT_VISIBLE_DEVICES')
+    print('NODE_ENTRY', json.dumps({k: os.environ[k] for k in names if k in os.environ}), flush=True)
+    print('BOOTSTRAP_PYTHON', sys.executable, sys.version, flush=True)
     if args.mode == 'preview':
         return
-    if secondary_entry(os.environ):
-        print('Secondary platform entry: logical device 0 launches all eight cards', flush=True)
-        return
+    secondary_entry(os.environ)
     cache = Path(spec['cache'])
     cache.mkdir(parents=True, exist_ok=True)
     with (cache / '.launcher.lock').open('a') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError('Another launcher is active on this node. Use one custom bash entry per node; do not wrap it in a per-card launcher.') from exc
         execute(spec)
 
 

@@ -6,19 +6,33 @@ from pathlib import Path
 import socket
 import subprocess
 import sys
+from runtime_contract import validate_node_entry
+
+
+def validate_topology(nodes, rank, per_node, env):
+    if nodes < 1 or not 0 <= rank < nodes or per_node < 1:
+        raise ValueError('Invalid node topology')
+    hosts = [h.strip() for h in env.get('VC_WORKER_HOSTS', '').split(',') if h.strip()]
+    # Match the known-good job: only the first host is consumed. Do not infer
+    # another platform contract from how many auxiliary addresses are listed.
+    if nodes > 1 and not (env.get('MASTER_ADDR') or hosts):
+        raise ValueError('Multi-node run needs MASTER_ADDR or VC_WORKER_HOSTS')
+    port = int(env.get('MASTER_PORT', '28436'))
+    if not 1 <= port <= 65535:
+        raise ValueError('MASTER_PORT must be between 1 and 65535')
+    return hosts
 
 
 def launch_spec(env, root):
     nodes = int(env.get('NNODES', env.get('MA_NUM_HOSTS', '1')))
     rank = int(env.get('NODE_RANK', env.get('VC_TASK_INDEX', '0')))
     per_node = int(env.get('NPROC_PER_NODE', '8'))
-    hosts = env.get('VC_WORKER_HOSTS', '').split(',')
-    master = env.get('MASTER_ADDR') or (hosts[0].strip() if hosts[0] else '127.0.0.1')
-    if not 0 <= rank < nodes or per_node < 1:
-        raise ValueError('Invalid node topology')
+    hosts = validate_topology(nodes, rank, per_node, env)
+    master = env.get('MASTER_ADDR') or (hosts[0] if hosts else '127.0.0.1')
     if nodes > 1 and master in ('127.0.0.1', 'localhost'):
         raise ValueError('Multi-node run needs MASTER_ADDR or VC_WORKER_HOSTS')
-    if env.get('LOCAL_RANK') is not None or env.get('RANK') is not None:
+    validate_node_entry(env)
+    if env.get('RANK') is not None:
         raise ValueError('Already inside a per-card launcher. Use one entry process per node.')
     for name in ('RUN_NAME', 'MODEL_DIR', 'DATA_ROOT', 'OUTPUT_ROOT'):
         if not env.get(name):
@@ -30,7 +44,7 @@ def launch_spec(env, root):
     total = nodes * per_node
     micro = int(env.get('MICRO_BATCH', '1'))
     batch = int(env.get('GLOBAL_BATCH', '64'))
-    if micro < 1 or batch % (total * micro):
+    if micro < 1 or batch < 1 or batch % (total * micro):
         raise ValueError('GLOBAL_BATCH must be divisible by nodes * cards * MICRO_BATCH')
     accum = batch // (total * micro)
     runtime = Path(env.get('STARVLA_RUNTIME', str(root / 'runtime')))
@@ -38,6 +52,8 @@ def launch_spec(env, root):
           'train_micro_batch_size_per_gpu': micro, 'train_batch_size': batch,
           'gradient_accumulation_steps': accum, 'gradient_clipping': 1.0,
           'zero_optimization': {'stage': 2, 'overlap_comm': False,
+                                'elastic_checkpoint': False,
+                                'load_from_fp32_weights': True,
                                 'contiguous_gradients': True,
                                 'reduce_bucket_size': 50000000,
                                 'allgather_bucket_size': 50000000},
@@ -52,6 +68,7 @@ def launch_spec(env, root):
                                 'zero3_init_flag': False}, 'use_cpu': False}
     command = [sys.executable, '-m', 'accelerate.commands.launch',
                '--config_file', str(runtime / 'accelerate.json'),
+               '--same_network',
                str(root / 'starVLA/training/train_starvla.py'),
                '--config_yaml', str(root / 'cann83/train.yaml')]
     return {'nodes': nodes, 'node_rank': rank, 'cards_per_node': per_node,
@@ -70,8 +87,6 @@ def main():
     print(json.dumps(spec, indent=2), flush=True)
     if args.dry_run:
         return
-    if 'MA_LOCAL_TASK_INDEX' in env and int(env['MA_LOCAL_TASK_INDEX']) != 0:
-        raise SystemExit('ModelArts started this per card; configure one entry per node first')
     for name in ('MODEL_DIR', 'DATA_ROOT'):
         if not Path(env[name]).is_dir():
             raise FileNotFoundError(env[name])
@@ -80,7 +95,7 @@ def main():
                TOKENIZERS_PARALLELISM='false', OMP_NUM_THREADS=env.get('OMP_NUM_THREADS', '1'),
                OPENBLAS_NUM_THREADS=env.get('OPENBLAS_NUM_THREADS', '1'),
                NO_ALBUMENTATIONS_UPDATE='1', ALBUMENTATIONS_OFFLINE='1',
-               TORCH_DIST_TIMEOUT_MINUTES='30')
+               TORCH_DIST_TIMEOUT_MINUTES=env.get('TORCH_DIST_TIMEOUT_MINUTES', '240'))
     env['PYTHONPATH'] = str(root) + os.pathsep + env.get('PYTHONPATH', '')
     runtime = Path(env.get('STARVLA_RUNTIME', str(root / 'runtime')))
     runtime.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,49 @@
+{
+  "kind": "offline_dependency_and_real_input_audit",
+  "wheel_files_hashed": 55,
+  "assets_hashed_excluding_model_weight_shards": 1312,
+  "hash_failures": [],
+  "metadata_environment": {
+    "python": "3.11.10",
+    "arch": "aarch64",
+    "platform": "linux",
+    "torch": "2.7.1",
+    "torchvision": "0.22.1"
+  },
+  "wheel_dependency_closure_missing": [],
+  "wheel_dependency_closure_incompatible": [],
+  "executed_processor_test": {
+    "python": "3.12.7",
+    "platform": "Windows",
+    "torch": "2.9.0+cpu",
+    "transformers": "4.57.1",
+    "tokenizers": "0.22.1",
+    "reader_length": 52970,
+    "action_shape": [
+      8,
+      7
+    ],
+    "finite_actions": true,
+    "image_count": 2,
+    "action_token_id": 146663,
+    "action_token_count": 8,
+    "image_grid_thw": [
+      [
+        1,
+        16,
+        16
+      ],
+      [
+        1,
+        16,
+        16
+      ]
+    ],
+    "input_ids_shape": [
+      1,
+      190
+    ],
+    "model_weights_loaded": false
+  },
+  "npu_runtime_tested": false
+}

@@ -7,6 +7,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import time
+from obs_backend import select_backend
 
 def configured_root(env=None):
     env = os.environ if env is None else env
@@ -61,8 +62,7 @@ def retry(function, *args):
 class Store:
     def __init__(self, backend=None):
         if backend is None:
-            import moxing as mox
-            backend = mox.file
+            backend = select_backend()
         self.backend = backend
 
     def exists(self, path):
