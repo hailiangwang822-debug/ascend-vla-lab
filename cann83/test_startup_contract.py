@@ -109,6 +109,15 @@ class StartupContractTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'one entry per node'):
                     clean_child_environment(env)
 
+    def test_stale_accelerate_settings_do_not_override_this_job(self):
+        env = {**self.env(0), 'ACCELERATE_CONFIG_DS_FIELDS': 'mixed_precision,zero_stage',
+               'ACCELERATE_USE_FSDP': 'true', 'ACCELERATE_MIXED_PRECISION': 'fp16',
+               'ACCELERATE_DEEPSPEED_ZERO_STAGE': '3', 'HCCL_CONNECT_TIMEOUT': '7200'}
+        child = clean_child_environment(env)
+        self.assertFalse(any(k.startswith('ACCELERATE_') for k in child))
+        self.assertEqual(child['HCCL_CONNECT_TIMEOUT'], '7200')
+        self.assertEqual(env['ACCELERATE_MIXED_PRECISION'], 'fp16')
+
     def test_base_versions_accept_local_build_suffix(self):
         versions = {**BASE_PACKAGES, 'torch': '2.7.1+cpu'}
         validate_base_versions(versions, (3, 11, 10), 'aarch64')

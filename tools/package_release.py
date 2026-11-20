@@ -16,7 +16,7 @@ import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = 'v0.1.2'
+VERSION = 'v0.1.3'
 NOTICE = ('Qwen is licensed under the Qwen RESEARCH LICENSE AGREEMENT, '
           'Copyright (c) Alibaba Cloud. All Rights Reserved.\n')
 ATTRIBUTION = '''LIBERO Spatial offline data archive
@@ -59,7 +59,8 @@ def main():
     manifest = json.loads(manifest_path.read_text())
     paths = {r['path'] for r in manifest['files']} | {
         'run_cloud.sh', 'cann83/requirements.lock', 'cann83/bundle-manifest.json',
-        'cann83/assets-manifest.json', 'cann83/runtime_contract.py', 'cann83/obs_backend.py'}
+        'cann83/assets-manifest.json', 'cann83/runtime_contract.py', 'cann83/obs_backend.py',
+        'cann83/validate_launch.py'}
     manifest['files'] = [{'path': p, 'sha256': info(ROOT / p)['sha256']} for p in sorted(paths)]
     manifest['release'] = VERSION
     manifest['validation'] = 'CPU recovery tests passed; actual 64-card NPU/OBS validation pending'

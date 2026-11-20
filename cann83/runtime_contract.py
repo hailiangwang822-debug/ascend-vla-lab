@@ -41,6 +41,11 @@ def clean_child_environment(env):
                  'ASCEND_DEVICE_ID', 'RANK', 'WORLD_SIZE', 'LOCAL_WORLD_SIZE',
                  'MA_LOCAL_TASK_INDEX'):
         child.pop(name, None)
+    # This package supplies a complete launch configuration. Do not inherit
+    # another job's Accelerate/FSDP/precision/DeepSpeed settings from the image.
+    for name in list(child):
+        if name.startswith('ACCELERATE_'):
+            child.pop(name)
     return child
 
 

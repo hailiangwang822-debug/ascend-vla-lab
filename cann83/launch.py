@@ -6,7 +6,7 @@ from pathlib import Path
 import socket
 import subprocess
 import sys
-from runtime_contract import validate_node_entry
+from runtime_contract import clean_child_environment, validate_node_entry
 
 
 def validate_topology(nodes, rank, per_node, env):
@@ -58,8 +58,11 @@ def launch_spec(env, root):
                                 'reduce_bucket_size': 50000000,
                                 'allgather_bucket_size': 50000000},
           'steps_per_print': 10, 'wall_clock_breakdown': False}
+    # With a DeepSpeed config file, precision belongs to that file alone.
+    # Even mixed_precision='no' in Accelerate's JSON is treated as an explicit
+    # conflicting field by Accelerate 1.11's DeepSpeedPlugin.
     cfg = {'compute_environment': 'LOCAL_MACHINE', 'distributed_type': 'DEEPSPEED',
-           'mixed_precision': 'bf16', 'num_machines': nodes, 'num_processes': total,
+           'num_machines': nodes, 'num_processes': total,
            'machine_rank': rank, 'main_process_ip': master,
            'main_process_port': int(env.get('MASTER_PORT', '28436')),
            'same_network': True, 'rdzv_backend': 'static',
@@ -82,7 +85,7 @@ def main():
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    env = dict(os.environ)
+    env = clean_child_environment(os.environ)
     spec = launch_spec(env, root)
     print(json.dumps(spec, indent=2), flush=True)
     if args.dry_run:
@@ -101,6 +104,10 @@ def main():
     runtime.mkdir(parents=True, exist_ok=True)
     for name, data in [('deepspeed', spec['deepspeed']), ('accelerate', spec['accelerate'])]:
         (runtime / f'{name}.json').write_text(json.dumps(data, indent=2))
+    # Exercise the actual CLI -> worker environment -> plugin path in a
+    # separate process before launching any distributed workers.
+    subprocess.run([sys.executable, str(root / 'cann83/validate_launch.py'),
+                    *spec['command'][3:]], cwd=root, env=env, check=True)
     run_dir = Path(env['OUTPUT_ROOT']) / env['RUN_NAME']
     run_dir.mkdir(parents=True, exist_ok=True)
     manifest = run_dir / f'launch-node-{spec["node_rank"]}.json'

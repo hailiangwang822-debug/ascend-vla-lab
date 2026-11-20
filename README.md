@@ -8,7 +8,7 @@
 
 ## 开始实践
 
-- **已有资产用户更新 [v0.1.2 版本检查修复包](docs/ascend/VERSION_FIX_V012_CN.md)：包含节点入口修复，并接受实际作业的 torch-npu 2.7.1。模型与数据不用重传。**
+- **已有资产用户更新 [v0.1.3 启动配置修复包](docs/ascend/LAUNCH_FIX_V013_CN.md)：修复 Accelerate/DeepSpeed 重复声明混合精度的问题，包含之前的节点入口和版本检查修复。模型与数据不用重传。**
 - [黄区 Windows → 贵阳 OBS → ModelArts 64 卡操作指南](docs/ascend/YELLOW_ZONE_RUNBOOK_CN.md)
 - [模型原理、训练基础和学习路线](docs/ascend/PROJECT_GUIDE_CN.md)
 - [下载离线交付包](https://github.com/hailiangwang822-debug/ascend-vla-lab/releases)

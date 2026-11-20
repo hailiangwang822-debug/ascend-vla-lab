@@ -21,7 +21,7 @@
     },
     {
       "path": "cann83/launch.py",
-      "sha256": "a8ebf6ffd0036ea133ef80a39b2f33c5311feacebe152fa0771edd7dab0eb4d4"
+      "sha256": "59a0e433128a40915346e317e7d146a675a5b0b7009d3cbee78209d0bb4e55e2"
     },
     {
       "path": "cann83/obs_backend.py",
@@ -41,7 +41,7 @@
     },
     {
       "path": "cann83/runtime_contract.py",
-      "sha256": "a2cce2beba3cf5714edf4b632d519964b4c3a70bcb06842d84738c159965ad87"
+      "sha256": "d754a79098fb4e2272ebec38571d5ec28a5a1d535cccc4971b9ec466c2aa7f9c"
     },
     {
       "path": "cann83/train.yaml",
@@ -50,6 +50,10 @@
     {
       "path": "cann83/training_checkpoint.py",
       "sha256": "2567eee2410dbc4c714c5e1815860cf75fb50c226cd3c4ce9b6e4a4a20305bfe"
+    },
+    {
+      "path": "cann83/validate_launch.py",
+      "sha256": "848d1e299aefba43959376722e59be107e6f9ab34a0a81cad5999dd6e5aed92f"
     },
     {
       "path": "run_cloud.sh",
@@ -86,5 +90,5 @@
   ],
   "validation": "CPU recovery tests passed; actual 64-card NPU/OBS validation pending",
   "checkpoint_semantics": "full state + strict per-rank NPU/CPU RNG; 8-node OBS commit; NPU integration pending",
-  "release": "v0.1.2"
+  "release": "v0.1.3"
 }

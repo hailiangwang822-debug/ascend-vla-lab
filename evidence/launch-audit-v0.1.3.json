@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-20",
+  "release": "v0.1.3",
+  "local_runtime": "Windows Python 3.12, CPU torch 2.9, official Accelerate 1.11.0 source",
+  "tests_passed": 38,
+  "regressions": [
+    "Original mixed_precision plus deepspeed_config_file error reproduced with real launch_command and DeepSpeedPlugin",
+    "Explicit mixed_precision=no also rejected; removing the Accelerate field preserves DeepSpeed BF16",
+    "All eight node configurations parse to eight workers and a common rendezvous",
+    "Real plugin constructed in fresh subprocess from emitted worker environment",
+    "Production launch probe subprocess passes valid configuration and rejects mismatched accumulation",
+    "Stale ACCELERATE_* environment settings removed without changing NPU visibility",
+    "Existing runtime version, OBS failure and full-state CPU recovery regressions passed"
+  ],
+  "reported_cloud_progress": "Assets, imports, 8-device enumeration and real two-camera dataset preflight passed before plugin initialization failed",
+  "not_validated_locally": ["NPU kernels", "64-rank HCCL", "3B training update", "real OBS checkpoint recovery"]
+}
