@@ -16,7 +16,7 @@ import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = 'v0.1.1'
+VERSION = 'v0.1.2'
 NOTICE = ('Qwen is licensed under the Qwen RESEARCH LICENSE AGREEMENT, '
           'Copyright (c) Alibaba Cloud. All Rights Reserved.\n')
 ATTRIBUTION = '''LIBERO Spatial offline data archive

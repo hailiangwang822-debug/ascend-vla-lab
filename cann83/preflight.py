@@ -7,17 +7,14 @@ from pathlib import Path
 import platform
 import shutil
 import fcntl
+from runtime_contract import ISOLATED_PACKAGES, validate_package_versions
 
 
 def main():
-    expected = {'torch': '2.7.1', 'torch-npu': '2.7.1.post2', 'torchvision': '0.22.1',
-                'accelerate': '1.11.0', 'deepspeed': '0.18.4', 'numpy': '1.26.4',
-                'transformers': '4.57.1', 'pydantic': '2.10.6', 'numpydantic': '1.6.9'}
+    expected = ISOLATED_PACKAGES
     found = {k: metadata.version(k) for k in expected}
     print(json.dumps({'arch': platform.machine(), 'versions': found}, indent=2), flush=True)
-    for k, v in expected.items():
-        if found[k].split('+', 1)[0] != v:
-            raise RuntimeError(f'{k}: expected {v}, got {found[k]}')
+    validate_package_versions(found, expected)
     import torch
     import torch_npu
     if platform.machine() != 'aarch64' or not torch.npu.is_available() or torch.npu.device_count() != 8:
@@ -34,9 +31,11 @@ def main():
     for name, module in [('torch', torch), ('torch-npu', torch_npu),
                          ('transformers', transformers), ('accelerate', accelerate),
                          ('deepspeed', deepspeed)]:
-        if module.__version__.split('+', 1)[0] != expected[name]:
-            raise RuntimeError(f'{name} import shadowed by PYTHONPATH/user site: {module.__file__}')
         print('RUNTIME_MODULE', name, module.__version__, module.__file__, flush=True)
+        validate_package_versions({name: module.__version__}, {name: expected[name]})
+        if module.__version__.split('+', 1)[0] != found[name].split('+', 1)[0]:
+            print('RUNTIME_VERSION_LABEL_DIFF', name, 'metadata=' + found[name],
+                  'module=' + module.__version__, 'both admitted to functional validation', flush=True)
     model = Path(os.environ['MODEL_DIR'])
     index = json.loads((model / 'model.safetensors.index.json').read_text())
     for name in set(index['weight_map'].values()):

@@ -33,7 +33,7 @@
     },
     {
       "path": "cann83/preflight.py",
-      "sha256": "1beb4bd720da74dc87cc40189f1e0284393294806e452b297764685b7d65f448"
+      "sha256": "468acb1e95a9b976b0c5e9ec2cb700b821d183a0bfc95867230eead2e6516d6d"
     },
     {
       "path": "cann83/requirements.lock",
@@ -41,7 +41,7 @@
     },
     {
       "path": "cann83/runtime_contract.py",
-      "sha256": "0f02e2e67cd73010664464027fcfd41d7f838cdc09e043f3d099cbdcb049d32a"
+      "sha256": "a2cce2beba3cf5714edf4b632d519964b4c3a70bcb06842d84738c159965ad87"
     },
     {
       "path": "cann83/train.yaml",
@@ -77,7 +77,7 @@
     },
     {
       "path": "starVLA/training/train_starvla.py",
-      "sha256": "6e6120fe58beb2f65c56cafc04c59d6b07cafbcce82ad23bbf1a5c90c1f1d235"
+      "sha256": "0417f176a8e41babeb9c18d1bb62cac47edb54600d51cd87c37fb5f082644e20"
     },
     {
       "path": "starVLA/training/trainer_utils/trainer_tools.py",
@@ -86,5 +86,5 @@
   ],
   "validation": "CPU recovery tests passed; actual 64-card NPU/OBS validation pending",
   "checkpoint_semantics": "full state + strict per-rank NPU/CPU RNG; 8-node OBS commit; NPU integration pending",
-  "release": "v0.1.1"
+  "release": "v0.1.2"
 }

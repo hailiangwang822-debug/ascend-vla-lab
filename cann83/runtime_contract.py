@@ -9,6 +9,21 @@ import sys
 BASE_PACKAGES = {'torch': '2.7.1', 'torch-npu': '2.7.1.post2',
                  'torchvision': '0.22.1', 'accelerate': '1.11.0',
                  'deepspeed': '0.18.4'}
+# The inspected running VLM image reported post2; the actual submitted VLA
+# container reports 2.7.1. Admit both observed builds to FUNCTIONAL validation.
+# This is not a claim that their kernels or checkpoint runtimes are identical.
+VERSION_VARIANTS = {'torch-npu': ('2.7.1', '2.7.1.post2')}
+ISOLATED_PACKAGES = {**BASE_PACKAGES, 'numpy': '1.26.4',
+                     'transformers': '4.57.1', 'pydantic': '2.10.6',
+                     'numpydantic': '1.6.9'}
+
+
+def validate_package_versions(versions, expected):
+    for name, preferred in expected.items():
+        actual = str(versions.get(name, 'missing'))
+        allowed = VERSION_VARIANTS.get(name, (preferred,))
+        if actual.split('+', 1)[0] not in allowed:
+            raise RuntimeError(f'{name}: accepted {" or ".join(allowed)}, found {actual}; inspect the actual image before changing platform packages.')
 
 
 def validate_node_entry(env):
@@ -32,10 +47,7 @@ def clean_child_environment(env):
 def validate_base_versions(versions, python_version, arch):
     if tuple(python_version[:2]) != (3, 11) or arch != 'aarch64':
         raise RuntimeError('Offline wheels require aarch64 Python 3.11; check CONDA_ENV and BOOTSTRAP_PYTHON above.')
-    for name, expected in BASE_PACKAGES.items():
-        actual = versions.get(name, 'missing')
-        if actual.split('+', 1)[0] != expected:
-            raise RuntimeError(f'Image {name}: expected {expected}, found {actual}; select the original PyTorch-2.7.1 image/environment.')
+    validate_package_versions(versions, BASE_PACKAGES)
 
 
 def check_base_runtime(root):
@@ -47,9 +59,11 @@ def check_base_runtime(root):
             versions[name] = 'missing'
     print('BASE_RUNTIME', json.dumps({'python': sys.version, 'executable': sys.executable,
           'arch': platform.machine(), 'versions': versions}), flush=True)
-    validate_base_versions(versions, sys.version_info, platform.machine())
     cann = Path('/usr/local/Ascend/ascend-toolkit/latest/version.cfg')
-    if not cann.is_file() or '8.3.RC1' not in cann.read_text():
+    cann_text = cann.read_text() if cann.is_file() else '<missing>'
+    print('CANN_RUNTIME', str(cann), cann_text, flush=True)
+    validate_base_versions(versions, sys.version_info, platform.machine())
+    if '8.3.RC1' not in cann_text:
         raise RuntimeError('Expected CANN 8.3.RC1 in ascend-toolkit/latest/version.cfg')
     from obs_state import digest
     manifest = json.loads((root / 'adaptation-manifest.json').read_text())

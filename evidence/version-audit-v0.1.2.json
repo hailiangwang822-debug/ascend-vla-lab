@@ -1,0 +1,33 @@
+{
+  "release": "v0.1.2",
+  "date": "2026-11-20",
+  "source": "User-provided ModelArts training log",
+  "failure_time_asia_shanghai": "2026-11-20 17:44:10",
+  "observed_runtime": {
+    "python": "3.11.10",
+    "architecture": "aarch64",
+    "torch": "2.7.1",
+    "torch-npu": "2.7.1",
+    "torchvision": "0.22.1",
+    "accelerate": "1.11.0",
+    "deepspeed": "0.18.4"
+  },
+  "observed_failure": "Image torch-npu: expected 2.7.1.post2, found 2.7.1",
+  "stage": "Base-runtime metadata guard, before asset download and model loading",
+  "previous_node_entry_fix_observed": true,
+  "old_guard_reproduced_locally_with_reported_metadata": true,
+  "fix": "One shared policy for base metadata, isolated metadata and module versions; observed 2.7.1 and 2.7.1.post2 admitted to functional validation",
+  "platform_packages_changed": false,
+  "functional_probe_added": "FP32/BF16 matmul and backward on all NPU workers, plus HCCL rank sum, before model loading",
+  "new_functional_probe_cloud_tested": false,
+  "actual_3b_training_tested": false,
+  "real_obs_tested": false,
+  "local_tests": {
+    "passed": 33,
+    "total": 33,
+    "python": "3.12.7",
+    "torch": "2.9.0+cpu",
+    "accelerate": "1.11.0 official source",
+    "includes_real_bootstrap_and_preflight_version_paths": true
+  }
+}

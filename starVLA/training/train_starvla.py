@@ -429,11 +429,17 @@ def main(cfg) -> None:
         dist.all_reduce(rank_sum)
         if rank_sum.item() != sum(range(64)):
             raise RuntimeError('HCCL rank collective returned the wrong result')
-        x = torch.ones((16, 16), device=accelerator.device, dtype=torch.bfloat16)
-        if not torch.equal((x @ x).float().cpu(), torch.full((16, 16), 16.0)):
-            raise RuntimeError('NPU BF16 matmul failed')
+        for dtype in (torch.float32, torch.bfloat16):
+            x = torch.ones((16, 16), device=accelerator.device, dtype=dtype, requires_grad=True)
+            result = x @ x
+            result.float().sum().backward()
+            if not torch.equal(result.float().detach().cpu(), torch.full((16, 16), 16.0)):
+                raise RuntimeError(f'NPU {dtype} matmul failed')
+            if not torch.equal(x.grad.float().cpu(), torch.full((16, 16), 32.0)):
+                raise RuntimeError(f'NPU {dtype} backward failed')
+            del x, result
         accelerator.wait_for_everyone()
-        accelerator.print('HCCL_64_RANKS_PASSED world_size=64 rank_sum=2016 BF16=passed')
+        accelerator.print('HCCL_64_RANKS_PASSED world_size=64 rank_sum=2016 FP32_BF16_FORWARD_BACKWARD=passed')
 
     cfg = wrap_config(cfg)
     logger.info("✅ Configuration wrapped for access tracking")
